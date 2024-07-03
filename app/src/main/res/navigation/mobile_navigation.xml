@@ -22,4 +22,9 @@
             android:name="com.example.betterday.ui.slideshow.SlideshowFragment"
             android:label="@string/menu_slideshow"
             tools:layout="@layout/fragment_slideshow"/>
+    <fragment
+            android:id="@+id/nav_block"
+            android:name="com.example.betterday.ui.block.BlockFragment"
+            android:label="Block"
+            tools:layout="@layout/fragment_block"/>
 </navigation>

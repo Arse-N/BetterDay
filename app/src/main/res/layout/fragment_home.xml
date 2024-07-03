@@ -6,18 +6,55 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ui.home.HomeFragment">
-
-    <TextView
-            android:id="@+id/text_home"
+    <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:textAlignment="center"
-            android:textSize="20sp"
+            android:id="@+id/header"
+            android:layout_height="100dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/reminder_list">
+        <TextView
+                android:text="Reminders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="30sp"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="20dp"
+                android:textStyle="bold"
+                style="@style/primaryTextColor"
+                android:id="@+id/header_title"/>
+        <TextView
+                android:text="0 active reminders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="60dp"
+                style="@style/primaryTextColor"
+                android:id="@+id/header_description"/>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/reminder_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            style="@style/app"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/header"
             app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/plus_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center"
+            app:srcCompat="@drawable/ic_add_symbol"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginBottom="20dp"/>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
