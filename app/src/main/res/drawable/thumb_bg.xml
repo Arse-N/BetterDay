@@ -1,17 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item android:state_checked="true">
-        <shape android:shape="oval">
-            <solid android:color="@color/white" />
-            <size android:width="18dp" android:height="18dp" />
-        </shape>
-    </item>
-
-    <item android:state_checked="false">
-        <shape android:shape="oval">
-            <solid android:color="@color/white" />
-            <size android:width="18dp" android:height="18dp" />
-        </shape>
-    </item>
-</selector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="36dp"
+        android:height="36dp"
+        android:tint="#FFFFFF"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <path
+            android:fillColor="#FF000000"
+            android:pathData="M12,12m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+</vector>

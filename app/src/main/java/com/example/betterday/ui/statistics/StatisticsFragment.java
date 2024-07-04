@@ -1,4 +1,4 @@
-package com.example.betterday.ui.slideshow;
+package com.example.betterday.ui.statistics;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,22 +8,22 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import com.example.betterday.databinding.FragmentSlideshowBinding;
+import com.example.betterday.databinding.FragmentStatisticsBinding;
 
-public class SlideshowFragment extends Fragment {
+public class StatisticsFragment extends Fragment {
 
-    private FragmentSlideshowBinding binding;
+    private FragmentStatisticsBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        SlideshowViewModel slideshowViewModel =
-                new ViewModelProvider(this).get(SlideshowViewModel.class);
+        StatisticsViewModel statisticsViewModel =
+                new ViewModelProvider(this).get(StatisticsViewModel.class);
 
-        binding = FragmentSlideshowBinding.inflate(inflater, container, false);
+        binding = FragmentStatisticsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
         final TextView textView = binding.textSlideshow;
-        slideshowViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        statisticsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
         return root;
     }
 

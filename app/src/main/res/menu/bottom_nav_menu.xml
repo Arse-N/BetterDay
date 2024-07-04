@@ -2,23 +2,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="home"/>
+            android:id="@+id/nav_reminders"
+            android:icon="@drawable/reminder_icon_activity"
+            android:title="reminders"/>
 
     <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="camera"/>
+            android:id="@+id/nav_calendar"
+            android:icon="@drawable/calendar_icon_activity"
+            android:title="calendar"/>
 
     <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="slideshow"/>
+            android:id="@+id/nav_statistics"
+            android:icon="@drawable/statistics_icon_activity"
+            android:title="statistics"/>
 
     <item
             android:id="@+id/nav_block"
-            android:icon="@drawable/ic_menu_app_blocking"
+            android:icon="@drawable/block_icon_activity"
             android:title="block"/>
 
 </menu>

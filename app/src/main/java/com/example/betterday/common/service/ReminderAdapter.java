@@ -42,12 +42,15 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         holder.titleTextView.setText(reminder.getTitle());
         holder.timeTextView.setText(reminder.getTime());
         holder.dayTextView.setText(reminder.getDay());
+        changeTextColor(holder, reminder.isToggleOn());
         holder.toggle.setChecked(reminder.isToggleOn());
         holder.removeButton.setOnClickListener(v -> {
             onItemRemoveListener.onItemRemove(position);
         });
         holder.toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             toggleChangeListener.onToggleChanged(position, isChecked);
+            changeTextColor(holder, isChecked);
+
         });
     }
 
@@ -57,11 +60,23 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         return remindersList.size();
     }
 
+    public void changeTextColor(@NonNull ReminderViewHolder holder, boolean toggle) {
+        if (!toggle) {
+            holder.titleTextView.setTextAppearance(R.style.secondaryTextColor);
+            holder.timeTextView.setTextAppearance(R.style.secondaryTextColor);
+            holder.slashTextView.setTextAppearance(R.style.secondaryTextColor);
+            holder.dayTextView.setTextAppearance(R.style.secondaryTextColor);
+        } else {
+            holder.titleTextView.setTextAppearance(R.style.primaryTextColor);
+            holder.timeTextView.setTextAppearance(R.style.primaryTextColor);
+            holder.slashTextView.setTextAppearance(R.style.primaryTextColor);
+            holder.dayTextView.setTextAppearance(R.style.primaryTextColor);
+        }
+    }
+
     static class ReminderViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout teammateItem;
-        TextView titleTextView;
-        TextView timeTextView;
-        TextView dayTextView;
+        TextView titleTextView, timeTextView, slashTextView, dayTextView;
         ImageView removeButton;
 
         Switch toggle;
@@ -71,6 +86,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             teammateItem = itemView.findViewById(R.id.teammate_item);
             titleTextView = itemView.findViewById(R.id.name_value);
             timeTextView = itemView.findViewById(R.id.time_value);
+            slashTextView = itemView.findViewById(R.id.slash);
             dayTextView = itemView.findViewById(R.id.day_value);
             removeButton = itemView.findViewById(R.id.remove_button);
             toggle = itemView.findViewById(R.id.toggle);

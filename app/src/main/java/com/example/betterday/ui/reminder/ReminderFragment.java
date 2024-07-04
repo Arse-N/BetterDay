@@ -1,4 +1,4 @@
-package com.example.betterday.ui.home;
+package com.example.betterday.ui.reminder;
 
 import android.Manifest;
 import android.app.Dialog;
@@ -27,7 +27,7 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 
-public class HomeFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.ToggleChangeListener {
+public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.ToggleChangeListener {
 
     private RecyclerView recyclerView;
     private Dialog addReminderDialog;
@@ -44,7 +44,7 @@ public class HomeFragment extends Fragment implements ReminderAdapter.OnItemRemo
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        return inflater.inflate(R.layout.fragment_reminder, container, false);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class HomeFragment extends Fragment implements ReminderAdapter.OnItemRemo
         }
         header = view.findViewById(R.id.header);
         header.setCardBackgroundColor(Color.TRANSPARENT);
-        reminderAdapter = new ReminderAdapter(remindersList, this::onItemRemove,this::onToggleChanged);
+        reminderAdapter = new ReminderAdapter(remindersList, this::onItemRemove, this::onToggleChanged);
         recyclerView = view.findViewById(R.id.reminder_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(reminderAdapter);
@@ -92,6 +92,7 @@ public class HomeFragment extends Fragment implements ReminderAdapter.OnItemRemo
 
         final ImageView addItemDialogX = addReminderDialog.findViewById(R.id.dialog_X);
         final Button finalAdd = addReminderDialog.findViewById(R.id.add_button);
+        finalAdd.setBackgroundResource(R.drawable.button_background);
         titleEditText = addReminderDialog.findViewById(R.id.title_text);
         timeEditText = addReminderDialog.findViewById(R.id.time_text);
         addReminderDialog.show();
