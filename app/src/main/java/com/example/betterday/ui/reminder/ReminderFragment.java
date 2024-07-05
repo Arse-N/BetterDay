@@ -5,6 +5,9 @@ import android.app.Dialog;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,27 +22,37 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.betterday.R;
+import com.example.betterday.common.constants.Day;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 import com.example.betterday.common.service.ReminderAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.ToggleChangeListener {
 
     private RecyclerView recyclerView;
-    private Dialog addReminderDialog;
+    private Dialog addReminderDialogFirstPage, addReminderDialogSecondPage;
     private FloatingActionButton add;
     private TextInputEditText titleEditText;
+    private TextInputLayout titleTextLayout;
 
     private TextView headerDescription;
+
+    private ToggleButton ringOnce, everyWeek;
+
+    private ToggleButton sunday, monday, tuesday, wednesday, thursday, friday, saturday;
 
     private CardView header;
     private TimePicker timeEditText;
     private ArrayList<Reminder> remindersList;
     private ReminderAdapter reminderAdapter;
+
+    private NumberPicker hourPicker, minutePicker;
 
     @Nullable
     @Override
@@ -73,9 +86,11 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                initializeDialog();
+                initializeDialogFirstPage();
             }
         });
+
+
     }
 
     @Override
@@ -83,43 +98,129 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         super.onDestroyView();
     }
 
-    private void initializeDialog() {
-        addReminderDialog = new Dialog(requireContext());
-        addReminderDialog.setContentView(R.layout.add_reminder_dialog);
-        addReminderDialog.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
-        addReminderDialog.setCancelable(false);
+    private void initializeDialogFirstPage() {
+        addReminderDialogFirstPage = new Dialog(requireContext());
+        addReminderDialogFirstPage.setContentView(R.layout.add_reminder_dialog_first_page);
+        addReminderDialogFirstPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
+        addReminderDialogFirstPage.setCancelable(false);
 //        addReminderDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        final ImageView addItemDialogX = addReminderDialog.findViewById(R.id.dialog_X);
-        final Button finalAdd = addReminderDialog.findViewById(R.id.add_button);
-        finalAdd.setBackgroundResource(R.drawable.button_background);
-        titleEditText = addReminderDialog.findViewById(R.id.title_text);
-        timeEditText = addReminderDialog.findViewById(R.id.time_text);
-        addReminderDialog.show();
-        addReminderDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        addReminderDialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
-        addReminderDialog.getWindow().setGravity(Gravity.BOTTOM);
+        final ImageView addItemDialogX = addReminderDialogFirstPage.findViewById(R.id.dialog_X);
+        final Button nextButton = addReminderDialogFirstPage.findViewById(R.id.next_button);
+        ringOnce = addReminderDialogFirstPage.findViewById(R.id.ring_once);
+        everyWeek = addReminderDialogFirstPage.findViewById(R.id.every_week);
+        sunday = addReminderDialogFirstPage.findViewById(R.id.sunday);
+        monday = addReminderDialogFirstPage.findViewById(R.id.monday);
+        tuesday = addReminderDialogFirstPage.findViewById(R.id.tuesday);
+        wednesday = addReminderDialogFirstPage.findViewById(R.id.wednesday);
+        thursday = addReminderDialogFirstPage.findViewById(R.id.thursday);
+        friday = addReminderDialogFirstPage.findViewById(R.id.friday);
+        saturday = addReminderDialogFirstPage.findViewById(R.id.saturday);
+        nextButton.setBackgroundResource(R.drawable.button_background);
+        titleEditText = addReminderDialogFirstPage.findViewById(R.id.title_text);
+        titleTextLayout = addReminderDialogFirstPage.findViewById(R.id.name_text_input_layout);
+        timeEditText = addReminderDialogFirstPage.findViewById(R.id.time_text);
+        addReminderDialogFirstPage.show();
+        addReminderDialogFirstPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 1900);
+        addReminderDialogFirstPage.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
+        addReminderDialogFirstPage.getWindow().setGravity(Gravity.BOTTOM);
 
         addItemDialogX.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addReminderDialog.dismiss();
+                addReminderDialogFirstPage.dismiss();
+            }
+        });
+
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (validateInput()) {
+                    initializeDialogSecondPage();
+                    addReminderDialogFirstPage.dismiss();
+                }
+            }
+        });
+        ringOnce.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                everyWeek.setChecked(false);
+                ringOnce.setEnabled(false);
+                everyWeek.setEnabled(true);
+                changeWeekDaysStatus(false);
+            }
+        });
+
+        everyWeek.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ringOnce.setChecked(false);
+                everyWeek.setEnabled(false);
+                ringOnce.setEnabled(true);
+                changeWeekDaysStatus(true);
+            }
+        });
+
+
+    }
+
+    private void initializeDialogSecondPage() {
+        addReminderDialogSecondPage = new Dialog(requireContext());
+        addReminderDialogSecondPage.setContentView(R.layout.add_reminder_dialog_second_page);
+        addReminderDialogSecondPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
+        addReminderDialogSecondPage.setCancelable(false);
+        addReminderDialogSecondPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 1900);
+//        addReminderDialogFirstPage.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
+        addReminderDialogSecondPage.getWindow().setGravity(Gravity.BOTTOM);
+//        addReminderDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        final ImageView addItemDialogX = addReminderDialogSecondPage.findViewById(R.id.dialog_X);
+        final Button finalAdd = addReminderDialogSecondPage.findViewById(R.id.add_button);
+        finalAdd.setBackgroundResource(R.drawable.button_background);
+        hourPicker = addReminderDialogSecondPage.findViewById(R.id.hourPicker);
+        hourPicker.setMaxValue(23);
+        hourPicker.setMinValue(0);
+        hourPicker.setValue(1);
+        minutePicker = addReminderDialogSecondPage.findViewById(R.id.minutePicker);
+        minutePicker.setMaxValue(59);
+        minutePicker.setMinValue(0);
+        hourPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                // Check if hours is 0
+                if (newVal == 0) {
+                    // Set minimum value of minutes picker to 1
+                    minutePicker.setMinValue(1);
+                } else {
+                    // Set minimum value of minutes picker back to default or any other value you need
+                    minutePicker.setMinValue(0); // or adjust as per your requirement
+                }
+            }
+        });
+        addReminderDialogSecondPage.show();
+
+
+        addItemDialogX.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addReminderDialogFirstPage.dismiss();
+                addReminderDialogSecondPage.dismiss();
             }
         });
 
         finalAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addNewReminder(titleEditText.getText().toString(), getTime(timeEditText));
+                Reminder newReminder = new Reminder(titleEditText.getText().toString(), getTime(timeEditText), getDay(), (byte) hourPicker.getValue(), (byte) minutePicker.getValue());
+                addNewReminder(newReminder);
                 updateHeaderDescription();
-                addReminderDialog.dismiss();
+                addReminderDialogSecondPage.dismiss();
             }
         });
-
     }
 
-    private void addNewReminder(String title, String time) {
-        remindersList.add(new Reminder(title, time, "day"));
+    private void addNewReminder(Reminder reminder) {
+        remindersList.add(reminder);
         reminderAdapter.notifyItemInserted(remindersList.size() - 1);
         JsonUtil.writeToJson(requireContext(), remindersList);
     }
@@ -166,4 +267,55 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
             headerDescription.setText(String.format("%d %s", activeReminderCount, activeReminderCount == 1 ? "active reminder" : "active reminders"));
         }
     }
+
+    private void changeWeekDaysStatus(boolean status) {
+        ToggleButton[] days = {sunday, monday, tuesday, wednesday, thursday, friday, saturday};
+        for (ToggleButton day : days) {
+            day.setChecked(status);
+            day.setEnabled(status);
+        }
+    }
+
+    private String getDay() {
+        ToggleButton[] days = {sunday, monday, tuesday, wednesday, thursday, friday, saturday};
+        if (ringOnce.isChecked()) {
+            return Day.RING_ONCE;
+        } else {
+            StringBuilder a = new StringBuilder();
+            long checkedCount = IntStream.range(0, days.length).filter(i -> days[i].isChecked()).count();
+
+            if (checkedCount == 0) {
+                return Day.RING_ONCE;
+            }
+
+            boolean allChecked = checkedCount == days.length;
+            IntStream.range(0, days.length)
+                    .filter(i -> days[i].isChecked())
+                    .forEach(i -> {
+                        if (a.length() > 0) {
+                            a.append(" ");
+                        }
+                        a.append(Day.WEEK_DAYS_SHORT[i]);
+                    });
+
+            if (allChecked) {
+                return Day.EVERY_DAY;
+            }
+
+            return a.toString();
+        }
+    }
+
+    private boolean validateInput() {
+        String input = titleEditText.getText().toString().trim();
+
+        if (TextUtils.isEmpty(input)) {
+            titleTextLayout.setError("Field cannot be empty");
+            return false;
+        } else {
+            titleTextLayout.setError(null);
+            return true;
+        }
+    }
+
 }

@@ -42,6 +42,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         holder.titleTextView.setText(reminder.getTitle());
         holder.timeTextView.setText(reminder.getTime());
         holder.dayTextView.setText(reminder.getDay());
+        holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getDurationHour(), reminder.getDurationMinute()));
         changeTextColor(holder, reminder.isToggleOn());
         holder.toggle.setChecked(reminder.isToggleOn());
         holder.removeButton.setOnClickListener(v -> {
@@ -66,17 +67,19 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             holder.timeTextView.setTextAppearance(R.style.secondaryTextColor);
             holder.slashTextView.setTextAppearance(R.style.secondaryTextColor);
             holder.dayTextView.setTextAppearance(R.style.secondaryTextColor);
+            holder.durationTextView.setTextAppearance(R.style.secondaryTextColor);
         } else {
             holder.titleTextView.setTextAppearance(R.style.primaryTextColor);
             holder.timeTextView.setTextAppearance(R.style.primaryTextColor);
             holder.slashTextView.setTextAppearance(R.style.primaryTextColor);
             holder.dayTextView.setTextAppearance(R.style.primaryTextColor);
+            holder.durationTextView.setTextAppearance(R.style.primaryTextColor);
         }
     }
 
     static class ReminderViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout teammateItem;
-        TextView titleTextView, timeTextView, slashTextView, dayTextView;
+        TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView;
         ImageView removeButton;
 
         Switch toggle;
@@ -88,6 +91,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             timeTextView = itemView.findViewById(R.id.time_value);
             slashTextView = itemView.findViewById(R.id.slash);
             dayTextView = itemView.findViewById(R.id.day_value);
+            durationTextView = itemView.findViewById(R.id.duration_text);
             removeButton = itemView.findViewById(R.id.remove_button);
             toggle = itemView.findViewById(R.id.toggle);
         }
