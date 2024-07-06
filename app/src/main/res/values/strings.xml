@@ -11,4 +11,10 @@
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
     <string name="slash"> | </string>
+    <string name="purple">purple</string>
+    <string name="pink">pink</string>
+    <string name="blue">blue</string>
+    <string name="yellow">yellow</string>
+    <string name="red">red</string>
+    <string name="green">green</string>
 </resources>

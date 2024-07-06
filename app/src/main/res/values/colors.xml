@@ -8,8 +8,14 @@
     <color name="black">#171717</color>
     <color name="white">#FEFEFE</color>
     <color name="yellow">#FAB720</color>
+    <color name="green">#066839</color>
+    <color name="blue">#1338BE</color>
+    <color name="red">#960019</color>
+    <color name="pink">#FC94AF</color>
+    <color name="purple">#710193</color>
     <color name="very_light_gray">#F3F4F6</color>
     <color name="light_gray">#DFDFDF</color>
     <color name="middle_gray">#4C4C4C</color>
     <color name="dark_gray">#1F1F1F</color>
+    <color name="transparent">#00FFFFFF</color>
 </resources>

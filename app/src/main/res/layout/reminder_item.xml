@@ -10,23 +10,34 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            style="@style/itemColor"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginStart="15dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:id="@+id/linearLayout1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="parent">
+        <androidx.cardview.widget.CardView
+                android:id="@+id/color_card"
+                android:layout_width="25dp"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="10dp"/>
         <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="10dp"
                 style="@style/itemColor"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="15dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginStart="15dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:id="@+id/linearLayout2"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/toggle">
+                android:id="@+id/linearLayout2">
             <TextView
-                    android:text="titleeeeeeeeeeeeee"
+                    android:text="titleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/name_value"
@@ -82,6 +93,7 @@
                     android:layout_height="wrap_content"
             />
         </LinearLayout>
+    </LinearLayout>
     <Switch
             android:id="@+id/toggle"
             android:layout_gravity="center|end"
@@ -109,4 +121,5 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginEnd="30dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

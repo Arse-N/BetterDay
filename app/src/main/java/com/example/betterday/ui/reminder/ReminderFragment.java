@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.betterday.R;
+import com.example.betterday.common.constants.CustomColor;
 import com.example.betterday.common.constants.Day;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
@@ -46,6 +47,8 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
     private ToggleButton ringOnce, everyWeek;
 
     private ToggleButton sunday, monday, tuesday, wednesday, thursday, friday, saturday;
+    private ToggleButton green, yellow, blue, red, pink, purple;
+    private String chosenColor;
 
     private CardView header;
     private TimePicker timeEditText;
@@ -103,12 +106,12 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         addReminderDialogFirstPage.setContentView(R.layout.add_reminder_dialog_first_page);
         addReminderDialogFirstPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
         addReminderDialogFirstPage.setCancelable(false);
-//        addReminderDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         final ImageView addItemDialogX = addReminderDialogFirstPage.findViewById(R.id.dialog_X);
         final Button nextButton = addReminderDialogFirstPage.findViewById(R.id.next_button);
         ringOnce = addReminderDialogFirstPage.findViewById(R.id.ring_once);
         everyWeek = addReminderDialogFirstPage.findViewById(R.id.every_week);
+//      weekdays buttons
         sunday = addReminderDialogFirstPage.findViewById(R.id.sunday);
         monday = addReminderDialogFirstPage.findViewById(R.id.monday);
         tuesday = addReminderDialogFirstPage.findViewById(R.id.tuesday);
@@ -116,12 +119,13 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         thursday = addReminderDialogFirstPage.findViewById(R.id.thursday);
         friday = addReminderDialogFirstPage.findViewById(R.id.friday);
         saturday = addReminderDialogFirstPage.findViewById(R.id.saturday);
+
         nextButton.setBackgroundResource(R.drawable.button_background);
         titleEditText = addReminderDialogFirstPage.findViewById(R.id.title_text);
         titleTextLayout = addReminderDialogFirstPage.findViewById(R.id.name_text_input_layout);
         timeEditText = addReminderDialogFirstPage.findViewById(R.id.time_text);
         addReminderDialogFirstPage.show();
-        addReminderDialogFirstPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 1900);
+        addReminderDialogFirstPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 2000);
         addReminderDialogFirstPage.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
         addReminderDialogFirstPage.getWindow().setGravity(Gravity.BOTTOM);
 
@@ -131,7 +135,26 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 addReminderDialogFirstPage.dismiss();
             }
         });
+        titleEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.length() > 0) {
+                    titleTextLayout.setError(null); // Clear error
+                } else {
+                    titleTextLayout.setError("Title cannot be empty!");
+                }
+            }
+        });
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -169,10 +192,8 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         addReminderDialogSecondPage.setContentView(R.layout.add_reminder_dialog_second_page);
         addReminderDialogSecondPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
         addReminderDialogSecondPage.setCancelable(false);
-        addReminderDialogSecondPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 1900);
-//        addReminderDialogFirstPage.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
+        addReminderDialogSecondPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 2000);
         addReminderDialogSecondPage.getWindow().setGravity(Gravity.BOTTOM);
-//        addReminderDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         final ImageView addItemDialogX = addReminderDialogSecondPage.findViewById(R.id.dialog_X);
         final Button finalAdd = addReminderDialogSecondPage.findViewById(R.id.add_button);
@@ -184,21 +205,44 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         minutePicker = addReminderDialogSecondPage.findViewById(R.id.minutePicker);
         minutePicker.setMaxValue(59);
         minutePicker.setMinValue(0);
+
+        //      color buttons
+        green = addReminderDialogSecondPage.findViewById(R.id.green);
+        yellow = addReminderDialogSecondPage.findViewById(R.id.yellow);
+        blue = addReminderDialogSecondPage.findViewById(R.id.blue);
+        red = addReminderDialogSecondPage.findViewById(R.id.red);
+        pink = addReminderDialogSecondPage.findViewById(R.id.pink);
+        purple = addReminderDialogSecondPage.findViewById(R.id.purple);
         hourPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                // Check if hours is 0
                 if (newVal == 0) {
-                    // Set minimum value of minutes picker to 1
                     minutePicker.setMinValue(1);
                 } else {
-                    // Set minimum value of minutes picker back to default or any other value you need
-                    minutePicker.setMinValue(0); // or adjust as per your requirement
+                    minutePicker.setMinValue(0);
                 }
             }
         });
         addReminderDialogSecondPage.show();
 
+        ToggleButton[] colors = {green, yellow, blue, red, pink, purple};
+
+        for (int i = 0; i < colors.length; i++) {
+            final int index = i;
+            colors[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        chosenColor = getColorName(index);
+                        for (int j = 0; j < colors.length; j++) {
+                            if (j != index) {
+                                colors[j].setChecked(false);
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         addItemDialogX.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -211,7 +255,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         finalAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Reminder newReminder = new Reminder(titleEditText.getText().toString(), getTime(timeEditText), getDay(), (byte) hourPicker.getValue(), (byte) minutePicker.getValue());
+                Reminder newReminder = new Reminder(titleEditText.getText().toString(), getTime(timeEditText), getDay(), (byte) hourPicker.getValue(), (byte) minutePicker.getValue(), chosenColor);
                 addNewReminder(newReminder);
                 updateHeaderDescription();
                 addReminderDialogSecondPage.dismiss();
@@ -310,12 +354,32 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         String input = titleEditText.getText().toString().trim();
 
         if (TextUtils.isEmpty(input)) {
-            titleTextLayout.setError("Field cannot be empty");
+            titleTextLayout.setError("Title cannot be empty!");
             return false;
         } else {
             titleTextLayout.setError(null);
             return true;
         }
     }
+
+    private String getColorName(int index) {
+        switch (index) {
+            case 0:
+                return "green";
+            case 1:
+                return "yellow";
+            case 2:
+                return "blue";
+            case 3:
+                return "red";
+            case 4:
+                return "pink";
+            case 5:
+                return "purple";
+            default:
+                return "";
+        }
+    }
+
 
 }

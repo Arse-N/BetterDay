@@ -86,6 +86,91 @@
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/day_card"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="20dp">
+                <LinearLayout
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1">
+                    <TextView
+                            android:text="Choose Color"
+                            android:layout_width="wrap_content"
+                            android:layout_gravity="center|start"
+                            android:layout_height="wrap_content"
+                            android:textSize="20sp"
+                            style="@style/primaryTextColor"
+                            android:textStyle="bold"
+                            android:layout_margin="10dp"
+                            android:id="@+id/choose_color"/>
+                    <LinearLayout
+                            android:id="@+id/choose_weekday"
+                            android:orientation="horizontal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center">
+                        <ToggleButton
+                                android:id="@+id/green"
+                                android:text="@string/green"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_green_circle"
+                                android:checked="true"/>
+                        <ToggleButton
+                                android:id="@+id/yellow"
+                                android:text="@string/yellow"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_yellow_circle"
+                                android:checked="false"/>
+                        <ToggleButton
+                                android:id="@+id/blue"
+                                android:text="@string/blue"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_blue_circle"
+                                android:checked="false"/>
+                        <ToggleButton
+                                android:id="@+id/red"
+                                android:text="@string/red"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_red_circle"
+                                android:checked="false"/>
+                        <ToggleButton
+                                android:id="@+id/pink"
+                                android:text="@string/pink"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_pink_circle"
+                                android:checked="false"/>
+                        <ToggleButton
+                                android:id="@+id/purple"
+                                android:text="@string/purple"
+                                android:textOff=""
+                                android:textOn=""
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
+                                android:background="@drawable/ic_purple_circle"
+                                android:checked="false"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <Button
                     android:text="done"
                     android:textColor="#ffffff"

@@ -7,9 +7,11 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.betterday.R;
+import com.example.betterday.common.constants.CustomColor;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 
@@ -44,6 +46,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         holder.dayTextView.setText(reminder.getDay());
         holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getDurationHour(), reminder.getDurationMinute()));
         changeTextColor(holder, reminder.isToggleOn());
+        changeCardColor(holder, reminder.getColor());
         holder.toggle.setChecked(reminder.isToggleOn());
         holder.removeButton.setOnClickListener(v -> {
             onItemRemoveListener.onItemRemove(position);
@@ -77,10 +80,31 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         }
     }
 
+    public void changeCardColor(@NonNull ReminderViewHolder holder, String color) {
+        int backgroundResource = R.drawable.card_green_bg;
+        if (color == null || color.equals(CustomColor.colors[0])) {
+        } else if (color.equals(CustomColor.colors[1])) {
+            backgroundResource = R.drawable.card_yellow_bg;
+        } else if (color.equals(CustomColor.colors[2])) {
+            backgroundResource = R.drawable.card_blue_bg;
+        } else if (color.equals(CustomColor.colors[3])) {
+            backgroundResource = R.drawable.card_red_bg;
+        } else if (color.equals(CustomColor.colors[4])) {
+            backgroundResource = R.drawable.card_pink_bg;
+        } else if (color.equals(CustomColor.colors[5])) {
+            backgroundResource = R.drawable.card_purple_bg;
+        }
+        holder.colorCard.setBackgroundResource(backgroundResource);
+
+    }
+
+
     static class ReminderViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout teammateItem;
         TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView;
         ImageView removeButton;
+
+        CardView colorCard;
 
         Switch toggle;
 
@@ -94,6 +118,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             durationTextView = itemView.findViewById(R.id.duration_text);
             removeButton = itemView.findViewById(R.id.remove_button);
             toggle = itemView.findViewById(R.id.toggle);
+            colorCard = itemView.findViewById(R.id.color_card);
         }
     }
 

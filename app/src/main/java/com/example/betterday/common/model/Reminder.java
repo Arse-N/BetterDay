@@ -11,12 +11,15 @@ public class Reminder {
 
     private boolean toggleOn;
 
-    public Reminder(String title, String time, String day, byte durationHour, byte durationMinute) {
+    private String color;
+
+    public Reminder(String title, String time, String day, byte durationHour, byte durationMinute, String color) {
         this.title = title;
         this.time = time;
         this.day = day;
         this.durationHour = durationHour;
         this.durationMinute = durationMinute;
+        this.color = color;
         this.toggleOn = true;
     }
 
@@ -46,5 +49,9 @@ public class Reminder {
 
     public byte getDurationMinute() {
         return durationMinute;
+    }
+
+    public String getColor(){
+        return color;
     }
 }
