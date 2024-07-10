@@ -6,10 +6,10 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import com.example.betterday.R;
-import com.example.betterday.databinding.ActivityMainBinding;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.betterday.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,8 +28,6 @@ public class MainActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
         }
-
-
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         navView.setItemIconTintList(null);

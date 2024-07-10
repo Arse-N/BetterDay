@@ -1,11 +1,14 @@
-package com.example.betterday.common.service;// PersonAdapter.java
+package com.example.betterday.common.service;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.Switch;
-import android.widget.TextView;
+import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.Dialog;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.view.*;
+import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -16,19 +19,26 @@ import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder> {
     private ArrayList<Reminder> remindersList;
     private OnItemRemoveListener onItemRemoveListener;
+    private UpdateListener updateListener;
+    private Dialog changeColorDialog;
+    private Context context;
 
-    private ToggleChangeListener toggleChangeListener;
+    private ColorService colorService;
+
+    private String chosenColor;
 
 
-    public ReminderAdapter(ArrayList<Reminder> reminders, OnItemRemoveListener onItemRemoveListener, ToggleChangeListener toggleChangeListener) {
+    public ReminderAdapter(ArrayList<Reminder> reminders, OnItemRemoveListener onItemRemoveListener, UpdateListener updateListener, Context context) {
         this.remindersList = reminders;
         this.onItemRemoveListener = onItemRemoveListener;
-        this.toggleChangeListener = toggleChangeListener;
-
+        this.updateListener = updateListener;
+        this.context = context;
+        this.colorService = new ColorService();
     }
 
     @NonNull
@@ -39,25 +49,26 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ReminderViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ReminderViewHolder holder, @SuppressLint("RecyclerView") int position) {
         Reminder reminder = remindersList.get(position);
         holder.titleTextView.setText(reminder.getTitle());
         holder.timeTextView.setText(reminder.getTime());
-        holder.dayTextView.setText(reminder.getDay());
-        holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getDurationHour(), reminder.getDurationMinute()));
+        holder.dayTextView.setText(reminder.getSelectedDate().getDayStringFormat());
+        holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getSelectedDate().getDurationHour(), reminder.getSelectedDate().getDurationMinute()));
         changeTextColor(holder, reminder.isToggleOn());
         changeCardColor(holder, reminder.getColor());
         holder.toggle.setChecked(reminder.isToggleOn());
-        holder.removeButton.setOnClickListener(v -> {
-            onItemRemoveListener.onItemRemove(position);
+        holder.optionsMenu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showPopupMenu(v, holder, position);
+            }
         });
         holder.toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            toggleChangeListener.onToggleChanged(position, isChecked);
+            updateListener.onToggleChanged(position, isChecked);
             changeTextColor(holder, isChecked);
-
         });
     }
-
 
     @Override
     public int getItemCount() {
@@ -95,17 +106,82 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             backgroundResource = R.drawable.card_purple_bg;
         }
         holder.colorCard.setBackgroundResource(backgroundResource);
-
     }
 
+    private void showPopupMenu(View view, @NonNull ReminderViewHolder holder, int position) {
+        PopupMenu popup = new PopupMenu(context, view);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.item_options_menu, popup.getMenu());
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getItemId() == R.id.menu_change_color_option) {
+                    initializeChangeColorDialog(holder, position);
+                    return true;
+                } else if (item.getItemId() == R.id.menu_delete_option) {
+                    onItemRemoveListener.onItemRemove(position);
+                    return true;
+                } else {
+                    return false;
+                }
+
+            }
+        });
+        popup.show();
+    }
+
+    public void initializeChangeColorDialog(@NonNull ReminderViewHolder holder, int position) {
+        changeColorDialog = new Dialog(context);
+        changeColorDialog.setContentView(R.layout.change_color_dialog);
+        changeColorDialog.getWindow().setBackgroundDrawableResource(R.drawable.dialog_background);
+        changeColorDialog.setCancelable(false);
+        changeColorDialog.getWindow().setLayout(1000, 1000);
+        final ImageView addItemDialogX = changeColorDialog.findViewById(R.id.dialog_X);
+        final Button updateButton = changeColorDialog.findViewById(R.id.update_button);
+        updateButton.setBackgroundResource(R.drawable.button_background);
+        ToggleButton[] colors = colorService.initializeColors(changeColorDialog);
+        for (int i = 0; i < colors.length; i++) {
+            final int index = i;
+            colors[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        chosenColor = colorService.getColorName(index);
+                        for (int j = 0; j < colors.length; j++) {
+                            if (j != index) {
+                                colors[j].setChecked(false);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        changeColorDialog.show();
+
+        addItemDialogX.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeColorDialog.dismiss();
+            }
+        });
+        updateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateListener.onColorChange(position, chosenColor);
+                changeCardColor(holder, chosenColor);
+                changeColorDialog.dismiss();
+            }
+        });
+
+
+    }
 
     static class ReminderViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout teammateItem;
         TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView;
-        ImageView removeButton;
-
+        ImageView optionsMenu;
         CardView colorCard;
-
         Switch toggle;
 
         public ReminderViewHolder(@NonNull View itemView) {
@@ -116,7 +192,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             slashTextView = itemView.findViewById(R.id.slash);
             dayTextView = itemView.findViewById(R.id.day_value);
             durationTextView = itemView.findViewById(R.id.duration_text);
-            removeButton = itemView.findViewById(R.id.remove_button);
+            optionsMenu = itemView.findViewById(R.id.options_menu);
             toggle = itemView.findViewById(R.id.toggle);
             colorCard = itemView.findViewById(R.id.color_card);
         }
@@ -126,7 +202,9 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         void onItemRemove(int position);
     }
 
-    public interface ToggleChangeListener {
+    public interface UpdateListener {
         void onToggleChanged(int position, boolean isChecked);
+
+        void onColorChange(int position, String chosenColor);
     }
 }

@@ -1,24 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
             android:id="@+id/nav_reminders"
             android:icon="@drawable/reminder_icon_activity"
-            android:title="reminders"/>
+            android:title="@string/reminders"/>
 
     <item
             android:id="@+id/nav_calendar"
             android:icon="@drawable/calendar_icon_activity"
-            android:title="calendar"/>
+            android:title="@string/calendar"/>
 
     <item
             android:id="@+id/nav_statistics"
             android:icon="@drawable/statistics_icon_activity"
-            android:title="statistics"/>
+            android:title="@string/statistics"/>
 
     <item
             android:id="@+id/nav_block"
             android:icon="@drawable/block_icon_activity"
-            android:title="block"/>
+            android:title="@string/block"/>
 
 </menu>

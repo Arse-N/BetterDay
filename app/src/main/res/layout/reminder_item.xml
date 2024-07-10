@@ -100,7 +100,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="5dp"
-            app:layout_constraintEnd_toStartOf="@+id/remove_button"
+            app:layout_constraintEnd_toStartOf="@+id/options_menu"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:thumb="@drawable/thumb_bg"
@@ -110,16 +110,18 @@
             android:scaleX="0.7"
             tools:ignore="UseSwitchCompatOrMaterialXml"/>
     <ImageView
+            android:id="@+id/options_menu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/ic_more_vert"
+            android:contentDescription="Options Menu"
+            android:layout_gravity="center|end"
             android:scaleX="1.5"
             android:scaleY="1.5"
-            style="@style/remove_icon"
-            android:id="@+id/remove_button"
-            android:layout_gravity="center|end"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginEnd="30dp"/>
+            android:layout_marginEnd="15dp"
+    android:layout_marginTop="-50dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

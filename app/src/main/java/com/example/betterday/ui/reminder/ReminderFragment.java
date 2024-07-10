@@ -6,12 +6,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,19 +18,22 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.betterday.R;
-import com.example.betterday.common.constants.CustomColor;
 import com.example.betterday.common.constants.Day;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
+import com.example.betterday.common.model.SelectedDate;
+import com.example.betterday.common.service.AlarmService;
+import com.example.betterday.common.service.ColorService;
 import com.example.betterday.common.service.ReminderAdapter;
+import com.example.betterday.common.service.ValidationService;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.stream.IntStream;
 
-public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.ToggleChangeListener {
+public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.UpdateListener {
 
     private RecyclerView recyclerView;
     private Dialog addReminderDialogFirstPage, addReminderDialogSecondPage;
@@ -47,15 +46,23 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
     private ToggleButton ringOnce, everyWeek;
 
     private ToggleButton sunday, monday, tuesday, wednesday, thursday, friday, saturday;
-    private ToggleButton green, yellow, blue, red, pink, purple;
     private String chosenColor;
+    private ArrayList<Integer> selectedDays;
 
     private CardView header;
+
+
     private TimePicker timeEditText;
     private ArrayList<Reminder> remindersList;
     private ReminderAdapter reminderAdapter;
 
+    private ColorService colorService;
+    private ValidationService validationService;
+    private AlarmService alarmService;
+
     private NumberPicker hourPicker, minutePicker;
+
+    private static final int PERMISSION_REQUEST_CODE = 100;
 
     @Nullable
     @Override
@@ -67,9 +74,17 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (!checkNotificationPermission()) {
+            requestNotificationPermission();
+        } else {
+            initializeFragment(view);
+        }
+    }
+
+    public void initializeFragment(@NonNull View view) {
+
         remindersList = new ArrayList<>();
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
         remindersList = JsonUtil.readFromJson(requireContext());
@@ -78,7 +93,10 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         }
         header = view.findViewById(R.id.header);
         header.setCardBackgroundColor(Color.TRANSPARENT);
-        reminderAdapter = new ReminderAdapter(remindersList, this::onItemRemove, this::onToggleChanged);
+        reminderAdapter = new ReminderAdapter(remindersList, this::onItemRemove, this, getContext());
+        colorService = new ColorService();
+        validationService = new ValidationService(remindersList);
+        alarmService = new AlarmService(remindersList, getContext());
         recyclerView = view.findViewById(R.id.reminder_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(reminderAdapter);
@@ -111,7 +129,6 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         final Button nextButton = addReminderDialogFirstPage.findViewById(R.id.next_button);
         ringOnce = addReminderDialogFirstPage.findViewById(R.id.ring_once);
         everyWeek = addReminderDialogFirstPage.findViewById(R.id.every_week);
-//      weekdays buttons
         sunday = addReminderDialogFirstPage.findViewById(R.id.sunday);
         monday = addReminderDialogFirstPage.findViewById(R.id.monday);
         tuesday = addReminderDialogFirstPage.findViewById(R.id.tuesday);
@@ -128,7 +145,6 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         addReminderDialogFirstPage.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, 2000);
         addReminderDialogFirstPage.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
         addReminderDialogFirstPage.getWindow().setGravity(Gravity.BOTTOM);
-
         addItemDialogX.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -158,9 +174,23 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validateInput()) {
-                    initializeDialogSecondPage();
-                    addReminderDialogFirstPage.dismiss();
+                if (validationService.validateInput(titleEditText, titleTextLayout)) {
+                    Reminder newReminder = new Reminder.Builder()
+                            .title(titleEditText.getText().toString())
+                            .time(getTime(timeEditText))
+                            .selectedDate(new SelectedDate.Builder()
+                                    .dayStringFormat(getDay())
+                                    .hour(timeEditText.getHour())
+                                    .minute(timeEditText.getMinute())
+                                    .days(selectedDays)
+                                    .build())
+                            .build();
+                    if (validationService.checkNewItemsDate(newReminder)) {
+                        initializeDialogSecondPage(newReminder);
+                        addReminderDialogFirstPage.dismiss();
+                    } else {
+                        Toast.makeText(requireContext(), "You can do one task at a time! Please change time or day.", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
@@ -187,7 +217,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
 
     }
 
-    private void initializeDialogSecondPage() {
+    private void initializeDialogSecondPage(Reminder newReminder) {
         addReminderDialogSecondPage = new Dialog(requireContext());
         addReminderDialogSecondPage.setContentView(R.layout.add_reminder_dialog_second_page);
         addReminderDialogSecondPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
@@ -207,12 +237,23 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         minutePicker.setMinValue(0);
 
         //      color buttons
-        green = addReminderDialogSecondPage.findViewById(R.id.green);
-        yellow = addReminderDialogSecondPage.findViewById(R.id.yellow);
-        blue = addReminderDialogSecondPage.findViewById(R.id.blue);
-        red = addReminderDialogSecondPage.findViewById(R.id.red);
-        pink = addReminderDialogSecondPage.findViewById(R.id.pink);
-        purple = addReminderDialogSecondPage.findViewById(R.id.purple);
+        ToggleButton[] colors = colorService.initializeColors(addReminderDialogSecondPage);
+        for (int i = 0; i < colors.length; i++) {
+            final int index = i;
+            colors[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        chosenColor = colorService.getColorName(index);
+                        for (int j = 0; j < colors.length; j++) {
+                            if (j != index) {
+                                colors[j].setChecked(false);
+                            }
+                        }
+                    }
+                }
+            });
+        }
         hourPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
@@ -225,25 +266,6 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         });
         addReminderDialogSecondPage.show();
 
-        ToggleButton[] colors = {green, yellow, blue, red, pink, purple};
-
-        for (int i = 0; i < colors.length; i++) {
-            final int index = i;
-            colors[i].setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if (isChecked) {
-                        chosenColor = getColorName(index);
-                        for (int j = 0; j < colors.length; j++) {
-                            if (j != index) {
-                                colors[j].setChecked(false);
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         addItemDialogX.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -255,13 +277,23 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         finalAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Reminder newReminder = new Reminder(titleEditText.getText().toString(), getTime(timeEditText), getDay(), (byte) hourPicker.getValue(), (byte) minutePicker.getValue(), chosenColor);
-                addNewReminder(newReminder);
-                updateHeaderDescription();
-                addReminderDialogSecondPage.dismiss();
+                newReminder.setColor(chosenColor);
+                SelectedDate selectedDate = newReminder.getSelectedDate();
+                selectedDate.setDurationHour((byte) hourPicker.getValue());
+                selectedDate.setDurationMinute((byte) minutePicker.getValue());
+                newReminder.setSelectedDate(selectedDate);
+                if (validationService.checkNewItemsDuration(newReminder)) {
+                    addNewReminder(newReminder);
+                    alarmService.setAlarmForItem(newReminder);
+                    updateHeaderDescription();
+                    addReminderDialogSecondPage.dismiss();
+                } else {
+                    Toast.makeText(requireContext(), "You can do one task at a time! Please make the duration shorter.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
+
 
     private void addNewReminder(Reminder reminder) {
         remindersList.add(reminder);
@@ -277,7 +309,15 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
     }
 
     @Override
+    public void onColorChange(int position, String chosenColor) {
+        remindersList.get(position).setColor(chosenColor);
+        updateHeaderDescription();
+        JsonUtil.writeToJson(requireContext(), remindersList);
+    }
+
+    @Override
     public void onItemRemove(int position) {
+        alarmService.cancelAlarmForItem(position);
         remindersList.remove(position);
         reminderAdapter.notifyItemRemoved(position);
         reminderAdapter.notifyItemRangeChanged(position, remindersList.size());
@@ -321,26 +361,30 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
     }
 
     private String getDay() {
+        selectedDays = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
         ToggleButton[] days = {sunday, monday, tuesday, wednesday, thursday, friday, saturday};
         if (ringOnce.isChecked()) {
+            selectedDays.add(dayOfWeek);
             return Day.RING_ONCE;
         } else {
             StringBuilder a = new StringBuilder();
             long checkedCount = IntStream.range(0, days.length).filter(i -> days[i].isChecked()).count();
 
             if (checkedCount == 0) {
+                selectedDays.add(dayOfWeek);
                 return Day.RING_ONCE;
             }
 
             boolean allChecked = checkedCount == days.length;
-            IntStream.range(0, days.length)
-                    .filter(i -> days[i].isChecked())
-                    .forEach(i -> {
-                        if (a.length() > 0) {
-                            a.append(" ");
-                        }
-                        a.append(Day.WEEK_DAYS_SHORT[i]);
-                    });
+            IntStream.range(0, days.length).filter(i -> days[i].isChecked()).forEach(i -> {
+                if (a.length() > 0) {
+                    a.append(" ");
+                }
+                a.append(Day.WEEK_DAYS_SHORT[i]);
+                selectedDays.add(i + 1);
+            });
 
             if (allChecked) {
                 return Day.EVERY_DAY;
@@ -350,36 +394,29 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         }
     }
 
-    private boolean validateInput() {
-        String input = titleEditText.getText().toString().trim();
 
-        if (TextUtils.isEmpty(input)) {
-            titleTextLayout.setError("Title cannot be empty!");
-            return false;
-        } else {
-            titleTextLayout.setError(null);
-            return true;
-        }
+    private boolean checkNotificationPermission() {
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
     }
 
-    private String getColorName(int index) {
-        switch (index) {
-            case 0:
-                return "green";
-            case 1:
-                return "yellow";
-            case 2:
-                return "blue";
-            case 3:
-                return "red";
-            case 4:
-                return "pink";
-            case 5:
-                return "purple";
-            default:
-                return "";
-        }
+    private void requestNotificationPermission() {
+        ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
     }
 
-
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted
+                View view = getView();
+                if (view != null) {
+                    initializeFragment(view);
+                }
+            } else {
+                // Permission denied
+                Toast.makeText(requireContext(), "Notification permission is required. Closing the app.", Toast.LENGTH_LONG).show();
+                requireActivity().finish(); // Close the app
+            }
+        }
+    }
 }
