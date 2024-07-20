@@ -25,36 +25,58 @@ public class AlarmService {
         this.context = context;
     }
 
+
     @SuppressLint("ScheduleExactAlarm")
     public void setAlarmForItem(Reminder newReminder) {
         ArrayList<Integer> selectedDays = newReminder.getSelectedDate().getDays();
+        int uniqueId = generateUniqueId(newReminder.getTitle());
+
         Intent alarmIntent = new Intent(context, AlarmReceiver.class);
         alarmIntent.putExtra("item_name", newReminder.getTitle());
+        alarmIntent.putExtra("item_id", newReminder.getId());
+        alarmIntent.putExtra("item_color", newReminder.getColor());
+        alarmIntent.putExtra("item_position", newReminder.getTitle());
+        alarmIntent.putExtra("item_duration", newReminder.getSelectedDate().getDurationHour() * 3600 + newReminder.getSelectedDate().getDurationMinute() * 60);
+        alarmIntent.putExtra("unique_id", uniqueId);
         alarmIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-        int uniqueId = generateUniqueId(newReminder.getTitle());
+
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, uniqueId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         TimeZone localTimeZone = TimeZone.getDefault();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Calendar calendar = Calendar.getInstance();
-        selectedDays = sortForWeekdays(selectedDays, calendar.get(Calendar.DAY_OF_WEEK));
-        for (int day : selectedDays) {
-            Calendar alarmCalendar = Calendar.getInstance();
-            alarmCalendar.setTimeZone(localTimeZone);
-            alarmCalendar.set(Calendar.HOUR_OF_DAY, newReminder.getSelectedDate().getHour());
-            alarmCalendar.set(Calendar.MINUTE, newReminder.getSelectedDate().getMinute());
-            alarmCalendar.set(Calendar.SECOND, 0);
-            alarmCalendar.set(Calendar.MILLISECOND, 0);
-            alarmCalendar.set(Calendar.DAY_OF_WEEK, day);
+        Calendar currentCalendar = Calendar.getInstance(localTimeZone);
+        selectedDays = sortForWeekdays(selectedDays, currentCalendar.get(Calendar.DAY_OF_WEEK));
 
-            if (alarmCalendar.before(Calendar.getInstance(localTimeZone))) {
-                alarmCalendar.add(Calendar.WEEK_OF_YEAR, 1);
+        Calendar alarmCalendar = Calendar.getInstance(localTimeZone);
+        alarmCalendar.set(Calendar.HOUR_OF_DAY, newReminder.getSelectedDate().getHour());
+        alarmCalendar.set(Calendar.MINUTE, newReminder.getSelectedDate().getMinute());
+        alarmCalendar.set(Calendar.SECOND, 0);
+        alarmCalendar.set(Calendar.MILLISECOND, 0);
+
+        if (selectedDays.contains(-1)) {
+            // One-time alarm for the next day
+            if (alarmCalendar.before(currentCalendar)) {
+                alarmCalendar.add(Calendar.DAY_OF_MONTH, 1);
             }
-            Long j = alarmCalendar.getTimeInMillis();
-            alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(alarmCalendar.getTimeInMillis(), pendingIntent), pendingIntent);
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), pendingIntent);
+        } else if (selectedDays.contains(100)) {
+            // Daily repeating alarm
+            if (alarmCalendar.before(currentCalendar)) {
+                alarmCalendar.add(Calendar.DAY_OF_MONTH, 1);
+            }
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+        } else {
+            // Weekly repeating alarm for selected days
+            for (int day : selectedDays) {
+                alarmCalendar.set(Calendar.DAY_OF_WEEK, day);
+                if (alarmCalendar.before(currentCalendar)) {
+                    alarmCalendar.add(Calendar.WEEK_OF_YEAR, 1);
+                }
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+            }
         }
-
     }
+
 
     public void cancelAlarmForItem(int position) {
         String itemName = remindersList.get(position).getTitle();

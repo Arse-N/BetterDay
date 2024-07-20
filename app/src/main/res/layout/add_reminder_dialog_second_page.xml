@@ -121,7 +121,8 @@
                                 android:layout_width="50dp"
                                 android:layout_height="50dp"
                                 android:background="@drawable/ic_green_circle"
-                                android:checked="true"/>
+                                android:checked="true"
+                                android:enabled="false"/>
                         <ToggleButton
                                 android:id="@+id/yellow"
                                 android:text="@string/yellow"

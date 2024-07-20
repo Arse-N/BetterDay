@@ -1,18 +1,26 @@
 package com.example.betterday.common.model;
 
 public class Reminder {
+
+    private int id;
     private String title;
     private String time;
     private SelectedDate selectedDate;
     private boolean toggleOn;
+    private boolean opened;
     private String color;
 
+    private int position;
+
     private Reminder(Builder builder) {
+        this.id = builder.id;
         this.title = builder.title;
         this.time = builder.time;
         this.toggleOn = builder.toggleOn;
+        this.opened = builder.opened;
         this.color = builder.color;
         this.selectedDate = builder.selectedDate;
+        this.position = builder.position;
     }
 
     public String getTitle() {
@@ -47,6 +55,26 @@ public class Reminder {
         this.time = time;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public boolean isOpened() {
+        return opened;
+    }
+
+    public void setOpened(boolean opened) {
+        this.opened = opened;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
     public void setSelectedDate(SelectedDate selectedDate) {
         this.selectedDate = selectedDate;
     }
@@ -56,13 +84,22 @@ public class Reminder {
     }
 
     public static class Builder {
+        private int id;
         private String title;
         private String time;
         private SelectedDate selectedDate;
         private boolean toggleOn = true;
         private String color;
+        private int position;
+
+        private boolean opened = false;
 
         public Builder() {
+        }
+
+        public Builder id(int id) {
+            this.id = id;
+            return this;
         }
 
         public Builder title(String title) {
@@ -85,8 +122,18 @@ public class Reminder {
             return this;
         }
 
+        public Builder opened(boolean opened) {
+            this.opened = opened;
+            return this;
+        }
+
         public Builder color(String color) {
             this.color = color;
+            return this;
+        }
+
+        public Builder position(int position) {
+            this.position = position;
             return this;
         }
 

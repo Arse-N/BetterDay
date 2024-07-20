@@ -1,43 +1,45 @@
 package com.example.betterday.ui.reminder;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.Bundle;
+import android.os.*;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.*;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.betterday.MainActivity;
 import com.example.betterday.R;
 import com.example.betterday.common.constants.Day;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 import com.example.betterday.common.model.SelectedDate;
-import com.example.betterday.common.service.AlarmService;
-import com.example.betterday.common.service.ColorService;
-import com.example.betterday.common.service.ReminderAdapter;
-import com.example.betterday.common.service.ValidationService;
+import com.example.betterday.common.service.*;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import org.w3c.dom.Text;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.UpdateListener {
 
     private RecyclerView recyclerView;
     private Dialog addReminderDialogFirstPage, addReminderDialogSecondPage;
-    private FloatingActionButton add;
     private TextInputEditText titleEditText;
     private TextInputLayout titleTextLayout;
 
@@ -47,22 +49,22 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
 
     private ToggleButton sunday, monday, tuesday, wednesday, thursday, friday, saturday;
     private String chosenColor;
-    private ArrayList<Integer> selectedDays;
-
     private CardView header;
-
-
     private TimePicker timeEditText;
     private ArrayList<Reminder> remindersList;
     private ReminderAdapter reminderAdapter;
 
     private ColorService colorService;
+    private TimeService timeService;
     private ValidationService validationService;
     private AlarmService alarmService;
 
     private NumberPicker hourPicker, minutePicker;
 
-    private static final int PERMISSION_REQUEST_CODE = 100;
+    private BroadcastReceiver alarmOpenEventReceiver;
+
+    private ToggleButton[] days;
+
 
     @Nullable
     @Override
@@ -70,20 +72,27 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         return inflater.inflate(R.layout.fragment_reminder, container, false);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        initializeFragment(view);
+        alarmOpenEventReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int alarmId = intent.getIntExtra("alarmId", -1);
+                if (alarmId != -1) {
+                    updateReminderItem(alarmId, true);
+                }
+            }
+        };
 
-        if (!checkNotificationPermission()) {
-            requestNotificationPermission();
-        } else {
-            initializeFragment(view);
-        }
+        IntentFilter openFilter = new IntentFilter("com.example.betterday.ALARM_EVENT");
+        requireContext().registerReceiver(alarmOpenEventReceiver, openFilter, Context.RECEIVER_NOT_EXPORTED);
     }
 
     public void initializeFragment(@NonNull View view) {
 
-        remindersList = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
         }
@@ -94,7 +103,9 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         header = view.findViewById(R.id.header);
         header.setCardBackgroundColor(Color.TRANSPARENT);
         reminderAdapter = new ReminderAdapter(remindersList, this::onItemRemove, this, getContext());
-        colorService = new ColorService();
+        colorService = new ColorService(requireContext());
+        timeService = new TimeService(remindersList, requireContext());
+//        countdownService = new CountdownService();
         validationService = new ValidationService(remindersList);
         alarmService = new AlarmService(remindersList, getContext());
         recyclerView = view.findViewById(R.id.reminder_list);
@@ -102,24 +113,15 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         recyclerView.setAdapter(reminderAdapter);
         headerDescription = view.findViewById(R.id.header_description);
         updateHeaderDescription();
-        add = view.findViewById(R.id.plus_button);
-
-        add.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                initializeDialogFirstPage();
-            }
-        });
-
-
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        requireContext().unregisterReceiver(alarmOpenEventReceiver);
     }
 
-    private void initializeDialogFirstPage() {
+    public void initializeDialogFirstPage() {
         addReminderDialogFirstPage = new Dialog(requireContext());
         addReminderDialogFirstPage.setContentView(R.layout.add_reminder_dialog_first_page);
         addReminderDialogFirstPage.getWindow().setBackgroundDrawableResource(R.drawable.bottom_dialog_background);
@@ -136,7 +138,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         thursday = addReminderDialogFirstPage.findViewById(R.id.thursday);
         friday = addReminderDialogFirstPage.findViewById(R.id.friday);
         saturday = addReminderDialogFirstPage.findViewById(R.id.saturday);
-
+        days = new ToggleButton[]{sunday, monday, tuesday, wednesday, thursday, friday, saturday};
         nextButton.setBackgroundResource(R.drawable.button_background);
         titleEditText = addReminderDialogFirstPage.findViewById(R.id.title_text);
         titleTextLayout = addReminderDialogFirstPage.findViewById(R.id.name_text_input_layout);
@@ -171,19 +173,21 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 }
             }
         });
+
         nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (validationService.validateInput(titleEditText, titleTextLayout)) {
                     Reminder newReminder = new Reminder.Builder()
-                            .title(titleEditText.getText().toString())
-                            .time(getTime(timeEditText))
+                            .id(remindersList.size())
+                            .title(Objects.requireNonNull(titleEditText.getText()).toString())
+                            .time(timeService.getTime(timeEditText))
+                            .position(remindersList.size())
                             .selectedDate(new SelectedDate.Builder()
-                                    .dayStringFormat(getDay())
+                                    .dayStringFormat(timeService.getDay(days, ringOnce))
                                     .hour(timeEditText.getHour())
                                     .minute(timeEditText.getMinute())
-                                    .days(selectedDays)
-                                    .build())
+                                    .days(timeService.getSelectedDays()).build())
                             .build();
                     if (validationService.checkNewItemsDate(newReminder)) {
                         initializeDialogSecondPage(newReminder);
@@ -200,7 +204,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 everyWeek.setChecked(false);
                 ringOnce.setEnabled(false);
                 everyWeek.setEnabled(true);
-                changeWeekDaysStatus(false);
+                timeService.changeWeekDaysStatus(false, days);
             }
         });
 
@@ -210,7 +214,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 ringOnce.setChecked(false);
                 everyWeek.setEnabled(false);
                 ringOnce.setEnabled(true);
-                changeWeekDaysStatus(true);
+                timeService.changeWeekDaysStatus(true, days);
             }
         });
 
@@ -245,9 +249,11 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if (isChecked) {
                         chosenColor = colorService.getColorName(index);
+                        colors[index].setEnabled(false);
                         for (int j = 0; j < colors.length; j++) {
                             if (j != index) {
                                 colors[j].setChecked(false);
+                                colors[j].setEnabled(true);
                             }
                         }
                     }
@@ -299,11 +305,20 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         remindersList.add(reminder);
         reminderAdapter.notifyItemInserted(remindersList.size() - 1);
         JsonUtil.writeToJson(requireContext(), remindersList);
+        if (!remindersList.isEmpty()) {
+            reminderAdapter.notifyItemChanged(remindersList.size() - 2);
+        }
     }
 
     @Override
     public void onToggleChanged(int position, boolean isChecked) {
         remindersList.get(position).setToggleOn(isChecked);
+        Reminder reminder = remindersList.get(position);
+        if (isChecked) {
+            alarmService.setAlarmForItem(reminder);
+        } else {
+            alarmService.cancelAlarmForItem(position);
+        }
         updateHeaderDescription();
         JsonUtil.writeToJson(requireContext(), remindersList);
     }
@@ -317,32 +332,20 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
 
     @Override
     public void onItemRemove(int position) {
+        int size = remindersList.size();
         alarmService.cancelAlarmForItem(position);
+        Reminder reminder = remindersList.get(position);
+        if (reminder.isOpened()) {
+            reminderAdapter.cancelCountDown();
+        }
         remindersList.remove(position);
         reminderAdapter.notifyItemRemoved(position);
         reminderAdapter.notifyItemRangeChanged(position, remindersList.size());
         updateHeaderDescription();
         JsonUtil.writeToJson(requireContext(), remindersList);
-    }
-
-    private String getTime(TimePicker timePicker) {
-        int hour, minute;
-        String amPm;
-        hour = timePicker.getHour();
-        minute = timePicker.getMinute();
-
-        if (hour >= 12) {
-            amPm = "PM";
-            if (hour > 12) {
-                hour -= 12;
-            }
-        } else {
-            amPm = "AM";
-            if (hour == 0) {
-                hour = 12;
-            }
+        if (position == size - 1) {
+            reminderAdapter.notifyItemChanged(position - 1);
         }
-        return String.format("%02d:%02d %s", hour, minute, amPm);
     }
 
     private void updateHeaderDescription() {
@@ -352,71 +355,24 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         }
     }
 
-    private void changeWeekDaysStatus(boolean status) {
-        ToggleButton[] days = {sunday, monday, tuesday, wednesday, thursday, friday, saturday};
-        for (ToggleButton day : days) {
-            day.setChecked(status);
-            day.setEnabled(status);
-        }
-    }
-
-    private String getDay() {
-        selectedDays = new ArrayList<>();
-        Calendar calendar = Calendar.getInstance();
-        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        ToggleButton[] days = {sunday, monday, tuesday, wednesday, thursday, friday, saturday};
-        if (ringOnce.isChecked()) {
-            selectedDays.add(dayOfWeek);
-            return Day.RING_ONCE;
-        } else {
-            StringBuilder a = new StringBuilder();
-            long checkedCount = IntStream.range(0, days.length).filter(i -> days[i].isChecked()).count();
-
-            if (checkedCount == 0) {
-                selectedDays.add(dayOfWeek);
-                return Day.RING_ONCE;
-            }
-
-            boolean allChecked = checkedCount == days.length;
-            IntStream.range(0, days.length).filter(i -> days[i].isChecked()).forEach(i -> {
-                if (a.length() > 0) {
-                    a.append(" ");
+    @SuppressLint("NotifyDataSetChanged")
+    private void updateReminderItem(int alarmId, boolean isOpened) {
+        for (Reminder reminder : remindersList) {
+            if (reminder.getId() == alarmId) {
+                reminder.setOpened(isOpened);
+                int position = remindersList.indexOf(reminder);
+                RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(position);
+                if (holder instanceof ReminderAdapter.ReminderViewHolder) {
+                    reminderAdapter.changeReminderItemSize((ReminderAdapter.ReminderViewHolder) holder, reminder.getColor(), isOpened);
+                    if (isOpened) {
+                        int duration = reminder.getSelectedDate().getDurationHour() * 3600 + reminder.getSelectedDate().getDurationMinute() * 60;
+                        reminderAdapter.startCountdown((ReminderAdapter.ReminderViewHolder) holder, reminder, duration);
+                    }
                 }
-                a.append(Day.WEEK_DAYS_SHORT[i]);
-                selectedDays.add(i + 1);
-            });
-
-            if (allChecked) {
-                return Day.EVERY_DAY;
-            }
-
-            return a.toString();
-        }
-    }
-
-
-    private boolean checkNotificationPermission() {
-        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestNotificationPermission() {
-        ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted
-                View view = getView();
-                if (view != null) {
-                    initializeFragment(view);
-                }
-            } else {
-                // Permission denied
-                Toast.makeText(requireContext(), "Notification permission is required. Closing the app.", Toast.LENGTH_LONG).show();
-                requireActivity().finish(); // Close the app
+                JsonUtil.writeToJson(requireContext(), remindersList);
+                break;
             }
         }
     }
+
 }

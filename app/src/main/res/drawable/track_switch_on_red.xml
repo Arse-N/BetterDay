@@ -7,7 +7,7 @@
             android:start="@dimen/switch_padding"
             android:top="@dimen/switch_padding">
         <shape>
-            <solid android:color="@color/yellow" />
+            <solid android:color="@color/light_red" />
             <corners android:radius="@dimen/switch_radius" />
             <size android:height="@dimen/switch_size" />
 

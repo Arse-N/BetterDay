@@ -1,12 +1,11 @@
 package com.example.betterday.common.service;
 
 import android.annotation.SuppressLint;
-import android.app.AlarmManager;
 import android.app.Dialog;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.Color;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.*;
 import android.widget.*;
 import androidx.annotation.NonNull;
@@ -14,12 +13,13 @@ import androidx.cardview.widget.CardView;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.betterday.R;
-import com.example.betterday.common.constants.CustomColor;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.ReminderViewHolder> {
     private ArrayList<Reminder> remindersList;
@@ -30,15 +30,16 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
 
     private ColorService colorService;
 
-    private String chosenColor;
+    private CountDownTimer countDownTimer;
 
+    private String chosenColor;
 
     public ReminderAdapter(ArrayList<Reminder> reminders, OnItemRemoveListener onItemRemoveListener, UpdateListener updateListener, Context context) {
         this.remindersList = reminders;
         this.onItemRemoveListener = onItemRemoveListener;
         this.updateListener = updateListener;
         this.context = context;
-        this.colorService = new ColorService();
+        this.colorService = new ColorService(context);
     }
 
     @NonNull
@@ -55,9 +56,17 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         holder.timeTextView.setText(reminder.getTime());
         holder.dayTextView.setText(reminder.getSelectedDate().getDayStringFormat());
         holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getSelectedDate().getDurationHour(), reminder.getSelectedDate().getDurationMinute()));
-        changeTextColor(holder, reminder.isToggleOn());
-        changeCardColor(holder, reminder.getColor());
+        colorService.changeTextColor(holder, reminder.isToggleOn());
+        colorService.changeItemColor(holder, reminder.getColor(), reminder.isToggleOn());
         holder.toggle.setChecked(reminder.isToggleOn());
+        RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.itemView.getLayoutParams();
+        if (position == getItemCount() - 1) {
+            params.bottomMargin = 150;
+        } else {
+            params.bottomMargin = 0;
+        }
+        holder.itemView.setLayoutParams(params);
+
         holder.optionsMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,8 +75,25 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         });
         holder.toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateListener.onToggleChanged(position, isChecked);
-            changeTextColor(holder, isChecked);
+            colorService.changeTextColor(holder, isChecked);
+            colorService.changeItemColor(holder, reminder.getColor(), isChecked);
         });
+
+        changeReminderItemSize(holder, reminder.getColor(), reminder.isOpened());
+        if (reminder.isOpened()) {
+            long currentTimeSeconds = System.currentTimeMillis() / 1000;
+            int duration = reminder.getSelectedDate().getDurationHour() * 3600 + reminder.getSelectedDate().getDurationMinute() * 60;
+            int reminderTimeInSeconds = (int) getTimeInSeconds(reminder.getSelectedDate().getHour(), reminder.getSelectedDate().getMinute());
+            duration = currentTimeSeconds - reminderTimeInSeconds > 0 ? (int) (duration - (currentTimeSeconds - reminderTimeInSeconds)) : 0;
+            if (duration == 0) {
+                remindersList.get(position).setOpened(false);
+                JsonUtil.writeToJson(context, remindersList);
+                changeReminderItemSize(holder, reminder.getColor(), false);
+            } else {
+                startCountdown(holder, reminder, duration);
+            }
+        }
+
     }
 
     @Override
@@ -75,37 +101,10 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         return remindersList.size();
     }
 
-    public void changeTextColor(@NonNull ReminderViewHolder holder, boolean toggle) {
-        if (!toggle) {
-            holder.titleTextView.setTextAppearance(R.style.secondaryTextColor);
-            holder.timeTextView.setTextAppearance(R.style.secondaryTextColor);
-            holder.slashTextView.setTextAppearance(R.style.secondaryTextColor);
-            holder.dayTextView.setTextAppearance(R.style.secondaryTextColor);
-            holder.durationTextView.setTextAppearance(R.style.secondaryTextColor);
-        } else {
-            holder.titleTextView.setTextAppearance(R.style.primaryTextColor);
-            holder.timeTextView.setTextAppearance(R.style.primaryTextColor);
-            holder.slashTextView.setTextAppearance(R.style.primaryTextColor);
-            holder.dayTextView.setTextAppearance(R.style.primaryTextColor);
-            holder.durationTextView.setTextAppearance(R.style.primaryTextColor);
+    public void cancelCountDown() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
         }
-    }
-
-    public void changeCardColor(@NonNull ReminderViewHolder holder, String color) {
-        int backgroundResource = R.drawable.card_green_bg;
-        if (color == null || color.equals(CustomColor.colors[0])) {
-        } else if (color.equals(CustomColor.colors[1])) {
-            backgroundResource = R.drawable.card_yellow_bg;
-        } else if (color.equals(CustomColor.colors[2])) {
-            backgroundResource = R.drawable.card_blue_bg;
-        } else if (color.equals(CustomColor.colors[3])) {
-            backgroundResource = R.drawable.card_red_bg;
-        } else if (color.equals(CustomColor.colors[4])) {
-            backgroundResource = R.drawable.card_pink_bg;
-        } else if (color.equals(CustomColor.colors[5])) {
-            backgroundResource = R.drawable.card_purple_bg;
-        }
-        holder.colorCard.setBackgroundResource(backgroundResource);
     }
 
     private void showPopupMenu(View view, @NonNull ReminderViewHolder holder, int position) {
@@ -148,9 +147,11 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if (isChecked) {
                         chosenColor = colorService.getColorName(index);
+                        colors[index].setEnabled(false);
                         for (int j = 0; j < colors.length; j++) {
                             if (j != index) {
                                 colors[j].setChecked(false);
+                                colors[j].setEnabled(true);
                             }
                         }
                     }
@@ -169,7 +170,8 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             @Override
             public void onClick(View v) {
                 updateListener.onColorChange(position, chosenColor);
-                changeCardColor(holder, chosenColor);
+                colorService.changeItemColor(holder, chosenColor, holder.toggle.isChecked());
+                chosenColor = null;
                 changeColorDialog.dismiss();
             }
         });
@@ -177,16 +179,69 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
 
     }
 
-    static class ReminderViewHolder extends RecyclerView.ViewHolder {
-        ConstraintLayout teammateItem;
+    public void changeReminderItemSize(@NonNull ReminderViewHolder holder, String color, boolean isOpened) {
+        int lightColor = colorService.getColorLightVersion(color);
+        float density = holder.itemView.getContext().getResources().getDisplayMetrics().density;
+        int heightInPixels = (int) (130 * density);
+        if (isOpened) {
+            heightInPixels = (int) (400 * density);
+        }
+        holder.reminderItem.getLayoutParams().height = heightInPixels;
+        holder.reminderItem.requestLayout();
+        holder.openedCard.setBackgroundResource(lightColor);
+        holder.toggle.setEnabled(!isOpened);
+    }
+
+    public long getTimeInSeconds(int hour, int minute) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis() / 1000;
+    }
+
+    public void startCountdown(@NonNull ReminderViewHolder holder, Reminder reminder, int duration) {
+        Handler uiHandler = new Handler(Looper.getMainLooper());
+        new CountDownTimer(duration * 1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                uiHandler.post(() -> {
+                    String time = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millisUntilFinished), TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millisUntilFinished)), TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millisUntilFinished)));
+                    final String[] hourMinSec = time.split(":");
+                    holder.hourValue.setText(hourMinSec[0]);
+                    holder.minuteValue.setText(hourMinSec[1]);
+                    holder.secondValue.setText(hourMinSec[2]);
+                });
+
+            }
+
+            public void onFinish() {
+                remindersList.get(reminder.getPosition()).setOpened(false);
+                if (reminder.getSelectedDate().getDays().contains(-1)) {
+                    remindersList.get(reminder.getPosition()).setToggleOn(false);
+                    holder.toggle.setChecked(false);
+                }
+                JsonUtil.writeToJson(context, remindersList);
+                changeReminderItemSize(holder, reminder.getColor(), false);
+
+            }
+        }.start();
+    }
+
+    public static class ReminderViewHolder extends RecyclerView.ViewHolder {
+        ConstraintLayout reminderItem;
+        LinearLayout recyclerItem;
         TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView;
+        public TextView hourValue, minuteValue, secondValue;
         ImageView optionsMenu;
-        CardView colorCard;
+        CardView colorCard, openedCard;
         Switch toggle;
 
         public ReminderViewHolder(@NonNull View itemView) {
             super(itemView);
-            teammateItem = itemView.findViewById(R.id.teammate_item);
+            recyclerItem = itemView.findViewById(R.id.recycler_item);
+            reminderItem = itemView.findViewById(R.id.reminder_item);
             titleTextView = itemView.findViewById(R.id.name_value);
             timeTextView = itemView.findViewById(R.id.time_value);
             slashTextView = itemView.findViewById(R.id.slash);
@@ -195,6 +250,10 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             optionsMenu = itemView.findViewById(R.id.options_menu);
             toggle = itemView.findViewById(R.id.toggle);
             colorCard = itemView.findViewById(R.id.color_card);
+            openedCard = itemView.findViewById(R.id.opened_card);
+            hourValue = itemView.findViewById(R.id.hourValue);
+            minuteValue = itemView.findViewById(R.id.minuteValue);
+            secondValue = itemView.findViewById(R.id.secondValue);
         }
     }
 
@@ -206,5 +265,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         void onToggleChanged(int position, boolean isChecked);
 
         void onColorChange(int position, String chosenColor);
+
     }
+
 }
