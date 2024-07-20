@@ -48,15 +48,22 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="25dp"
-                    android:layout_marginBottom="40dp"
-                    android:layout_gravity="center_horizontal">
-
+                    android:layout_marginBottom="10dp"
+                    android:layout_gravity="center_horizontal"
+                    app:boxBackgroundMode="filled"
+                    app:boxStrokeErrorColor="@color/red"
+                    app:errorIconTint="@color/red"
+                    app:errorTextColor="@color/red"
+                    app:errorEnabled="true">
                 <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/title_text"
                         android:layout_width="221dp"
-                        android:layout_height="58dp"
-                        android:paddingStart="10dp"
-                        android:layout_gravity="center"
+                        android:layout_height="wrap_content"
+                        android:textSize="16sp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/input_background"
+                        android:hint="Reminder name"
                         android:singleLine="true"/>
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -119,8 +126,8 @@
                             android:layout_gravity="center">
                         <ToggleButton
                                 android:id="@+id/sunday"
-                                android:textOff="S"
-                                android:textOn="S"
+                                android:textOff="@string/s"
+                                android:textOn="@string/s"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -131,8 +138,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/monday"
-                                android:textOff="M"
-                                android:textOn="M"
+                                android:textOff="@string/m"
+                                android:textOn="@string/m"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -143,8 +150,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/tuesday"
-                                android:textOff="T"
-                                android:textOn="T"
+                                android:textOff="@string/t"
+                                android:textOn="@string/t"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -155,8 +162,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/wednesday"
-                                android:textOff="W"
-                                android:textOn="W"
+                                android:textOff="@string/w"
+                                android:textOn="@string/w"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -167,8 +174,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/thursday"
-                                android:textOff="T"
-                                android:textOn="T"
+                                android:textOff="@string/t"
+                                android:textOn="@string/t"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -179,8 +186,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/friday"
-                                android:textOff="F"
-                                android:textOn="F"
+                                android:textOff="@string/f"
+                                android:textOn="@string/f"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"
@@ -191,8 +198,8 @@
                                 android:layout_weight="1"/>
                         <ToggleButton
                                 android:id="@+id/saturday"
-                                android:textOff="S"
-                                android:textOn="S"
+                                android:textOff="@string/s"
+                                android:textOn="@string/s"
                                 android:layout_width="100dp"
                                 android:layout_height="30dp"
                                 android:background="@drawable/day_button_selector"

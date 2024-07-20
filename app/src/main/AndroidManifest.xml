@@ -27,12 +27,6 @@
                   android:exported="false">
 
         </receiver>
-        <service
-                android:name=".common.service.CountdownService"
-                android:enabled="true"
-                android:exported="false" />
-
-
         <receiver android:name=".common.service.AlarmReceiver$StopAlarmReceiver" />
         <activity
                 android:name=".MainActivity"
