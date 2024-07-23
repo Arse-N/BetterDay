@@ -114,18 +114,15 @@ public class ColorService {
         holder.colorCard.setBackgroundResource(cardBackgroundResource);
         int lightColor = getColorLightVersion(color);
         holder.openedCard.setBackgroundResource(lightColor);
-        int zIndex = 120;
         if (isToggleOn) {
             holder.recyclerItem.setBackgroundResource(itemBackgroundResource);
             holder.toggle.setTrackResource(trackBackgroundResource);
             holder.optionsMenu.setImageResource(R.drawable.ic_more_vert_white);
-            zIndex = -120;
         } else {
             itemBackgroundResource = R.drawable.card_disabled_bg;
             holder.recyclerItem.setBackgroundResource(itemBackgroundResource);
             holder.optionsMenu.setImageResource(R.drawable.ic_more_vert);
         }
-        holder.colorCard.setTranslationZ(zIndex);
 
     }
 }

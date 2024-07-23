@@ -4,9 +4,10 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="130dp"
         android:orientation="horizontal"
         android:id="@+id/reminder_item"
+        android:background="@android:color/transparent"
         android:translationZ="-15dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +41,7 @@
                     android:id="@+id/color_card"
                     android:layout_width="25dp"
                     android:layout_height="match_parent"
-                    app:cardCornerRadius="10dp"/>
+                    android:translationZ="-100dp"/>
             <LinearLayout
                     android:orientation="vertical"
                     android:layout_width="match_parent"
