@@ -2,11 +2,13 @@ package com.example.betterday.ui.reminder;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
 import android.app.Dialog;
 import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.*;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.*;
@@ -37,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.UpdateListener {
+
+    private static final int REQUEST_CODE_SCHEDULE_EXACT_ALARM = 1;
 
     private RecyclerView recyclerView;
     private Dialog addReminderDialogFirstPage, addReminderDialogSecondPage;
@@ -315,7 +319,11 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         remindersList.get(position).setToggleOn(isChecked);
         Reminder reminder = remindersList.get(position);
         if (isChecked) {
-            alarmService.setAlarmForItem(reminder);
+            if (canScheduleExactAlarms()) {
+                alarmService.setAlarmForItem(reminder);
+            } else {
+                requestExactAlarmPermission();
+            }
         } else {
             alarmService.cancelAlarmForItem(position);
         }
@@ -355,6 +363,22 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         }
     }
 
+    private boolean canScheduleExactAlarms() {
+        AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return alarmManager.canScheduleExactAlarms();
+        } else {
+            return true;
+        }
+    }
+
+    private void requestExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+            startActivityForResult(intent, REQUEST_CODE_SCHEDULE_EXACT_ALARM);
+        }
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     private void updateReminderItem(int alarmId, boolean isOpened) {
         for (Reminder reminder : remindersList) {
@@ -371,6 +395,20 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 }
                 JsonUtil.writeToJson(requireContext(), remindersList);
                 break;
+            }
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_SCHEDULE_EXACT_ALARM) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (requireContext().getSystemService(AlarmManager.class).canScheduleExactAlarms()) {
+                    Toast.makeText(requireContext(), "Permission granted!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Permission denied!", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
