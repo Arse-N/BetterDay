@@ -64,7 +64,6 @@ public class AlarmService {
             if (alarmCalendar.before(currentCalendar)) {
                 alarmCalendar.add(Calendar.DAY_OF_MONTH, 1);
             }
-
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, uniqueId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), pendingIntent);
         } else if (selectedDays.contains(100)) {  // Case: Daily alarm
@@ -95,7 +94,6 @@ public class AlarmService {
                     daysUntilNextAlarm = 7;
                 }
                 alarmCalendar.add(Calendar.DAY_OF_YEAR, daysUntilNextAlarm);
-
                 int requestCode = uniqueId + day;
                 Intent customAlarmIntent = getIntent(newReminder, requestCode);
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, customAlarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);

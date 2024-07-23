@@ -312,6 +312,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         if (!remindersList.isEmpty()) {
             reminderAdapter.notifyItemChanged(remindersList.size() - 2);
         }
+        chosenColor = null;
     }
 
     @Override
@@ -354,6 +355,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         if (position == size - 1) {
             reminderAdapter.notifyItemChanged(position - 1);
         }
+        chosenColor = null;
     }
 
     private void updateHeaderDescription() {
