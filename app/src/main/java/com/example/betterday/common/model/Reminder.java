@@ -44,7 +44,7 @@ public class Reminder {
     }
 
     public void setColor(String color) {
-        this.color = color;
+        this.color = color == null ? "green" : color;
     }
 
     public void setTitle(String title) {
@@ -128,7 +128,7 @@ public class Reminder {
         }
 
         public Builder color(String color) {
-            this.color = color;
+            this.color = color == null ? "green" : color;
             return this;
         }
 

@@ -59,7 +59,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         showNotification(context, itemName, uniqueId);
         handler.postDelayed(() -> handleAlarmTimeout(context, itemName, uniqueId), ALARM_DURATION);
         Intent broadcastIntent = new Intent("com.example.betterday.ALARM_EVENT");
-        broadcastIntent.putExtra("alarmId", itemId);
+        broadcastIntent.putExtra("alarmId", uniqueId);
         context.sendBroadcast(broadcastIntent);
     }
 

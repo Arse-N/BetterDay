@@ -56,6 +56,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
         holder.timeTextView.setText(reminder.getTime());
         holder.dayTextView.setText(reminder.getSelectedDate().getDayStringFormat());
         holder.durationTextView.setText(String.format("%02dh %02dm", reminder.getSelectedDate().getDurationHour(), reminder.getSelectedDate().getDurationMinute()));
+        holder.idTextView.setText(String.valueOf(reminder.getId()));
         colorService.changeTextColor(holder, reminder.isToggleOn());
         colorService.changeItemColor(holder, reminder.getColor(), reminder.isToggleOn());
         holder.toggle.setChecked(reminder.isToggleOn());
@@ -232,7 +233,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
     public static class ReminderViewHolder extends RecyclerView.ViewHolder {
         ConstraintLayout reminderItem;
         LinearLayout recyclerItem;
-        TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView;
+        TextView titleTextView, timeTextView, slashTextView, dayTextView, durationTextView, idTextView;
         public TextView hourValue, minuteValue, secondValue;
         ImageView optionsMenu;
         CardView colorCard, openedCard;
@@ -244,6 +245,7 @@ public class ReminderAdapter extends RecyclerView.Adapter<ReminderAdapter.Remind
             reminderItem = itemView.findViewById(R.id.reminder_item);
             titleTextView = itemView.findViewById(R.id.name_value);
             timeTextView = itemView.findViewById(R.id.time_value);
+            idTextView = itemView.findViewById(R.id.reminder_id);
             slashTextView = itemView.findViewById(R.id.slash);
             dayTextView = itemView.findViewById(R.id.day_value);
             durationTextView = itemView.findViewById(R.id.duration_text);

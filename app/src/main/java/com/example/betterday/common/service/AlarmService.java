@@ -46,13 +46,13 @@ public class AlarmService {
         }
 
         ArrayList<Integer> selectedDays = newReminder.getSelectedDate().getDays();
-        int uniqueId = generateUniqueId(newReminder.getTitle());
+        int itemId = newReminder.getId();
 
         TimeZone localTimeZone = TimeZone.getDefault();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Calendar currentCalendar = Calendar.getInstance(localTimeZone);
 
-        Intent alarmIntent = getIntent(newReminder, uniqueId);
+        Intent alarmIntent = getIntent(newReminder, itemId);
 
         if (selectedDays.contains(-1)) {  // Case: One-time alarm
             Calendar alarmCalendar = Calendar.getInstance(localTimeZone);
@@ -64,7 +64,7 @@ public class AlarmService {
             if (alarmCalendar.before(currentCalendar)) {
                 alarmCalendar.add(Calendar.DAY_OF_MONTH, 1);
             }
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, uniqueId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, itemId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), pendingIntent);
         } else if (selectedDays.contains(100)) {  // Case: Daily alarm
             Calendar alarmCalendar = Calendar.getInstance(localTimeZone);
@@ -77,7 +77,7 @@ public class AlarmService {
                 alarmCalendar.add(Calendar.DAY_OF_MONTH, 1);
             }
 
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, uniqueId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(context, itemId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), pendingIntent);
             alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis() + AlarmManager.INTERVAL_DAY, AlarmManager.INTERVAL_DAY, pendingIntent);
         } else {  // Case: Custom days alarm
@@ -94,7 +94,7 @@ public class AlarmService {
                     daysUntilNextAlarm = 7;
                 }
                 alarmCalendar.add(Calendar.DAY_OF_YEAR, daysUntilNextAlarm);
-                int requestCode = uniqueId + day;
+                int requestCode = itemId + day;
                 Intent customAlarmIntent = getIntent(newReminder, requestCode);
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, customAlarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmCalendar.getTimeInMillis(), pendingIntent);
@@ -118,22 +118,13 @@ public class AlarmService {
     }
 
     public void cancelAlarmForItem(int position) {
-        String itemName = remindersList.get(position).getTitle();
-        int uniqueId = generateUniqueId(itemName);
-
+        int itemId = remindersList.get(position).getId();
         Intent alarmIntent = new Intent(context, AlarmReceiver.class);
-        pendingIntent = PendingIntent.getBroadcast(context, uniqueId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        pendingIntent = PendingIntent.getBroadcast(context, itemId, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(pendingIntent);
         pendingIntent.cancel();
     }
-
-    private int generateUniqueId(String itemName) {
-        long timestamp = System.currentTimeMillis();
-        String uniqueString = itemName + timestamp;
-        return uniqueString.hashCode();
-    }
-
 
 }

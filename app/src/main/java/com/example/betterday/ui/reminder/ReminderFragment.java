@@ -4,14 +4,21 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.Dialog;
-import android.content.*;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.*;
+import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.*;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,21 +29,16 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.betterday.MainActivity;
 import com.example.betterday.R;
-import com.example.betterday.common.constants.Day;
 import com.example.betterday.common.fileio.JsonUtil;
 import com.example.betterday.common.model.Reminder;
 import com.example.betterday.common.model.SelectedDate;
 import com.example.betterday.common.service.*;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-import org.w3c.dom.Text;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class ReminderFragment extends Fragment implements ReminderAdapter.OnItemRemoveListener, ReminderAdapter.UpdateListener {
 
@@ -183,7 +185,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
             public void onClick(View v) {
                 if (validationService.validateInput(titleEditText, titleTextLayout)) {
                     Reminder newReminder = new Reminder.Builder()
-                            .id(remindersList.size())
+                            .id(generateUniqueId(String.valueOf(titleEditText.getText())))
                             .title(Objects.requireNonNull(titleEditText.getText()).toString())
                             .time(timeService.getTime(timeEditText))
                             .position(remindersList.size())
@@ -309,7 +311,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         remindersList.add(reminder);
         reminderAdapter.notifyItemInserted(remindersList.size() - 1);
         JsonUtil.writeToJson(requireContext(), remindersList);
-        if (!remindersList.isEmpty()) {
+        if (remindersList.size() > 1) {
             reminderAdapter.notifyItemChanged(remindersList.size() - 2);
         }
         chosenColor = null;
@@ -341,7 +343,6 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
 
     @Override
     public void onItemRemove(int position) {
-        int size = remindersList.size();
         alarmService.cancelAlarmForItem(position);
         Reminder reminder = remindersList.get(position);
         if (reminder.isOpened()) {
@@ -352,7 +353,7 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
         reminderAdapter.notifyItemRangeChanged(position, remindersList.size());
         updateHeaderDescription();
         JsonUtil.writeToJson(requireContext(), remindersList);
-        if (position == size - 1) {
+        if (position == remindersList.size()) {
             reminderAdapter.notifyItemChanged(position - 1);
         }
         chosenColor = null;
@@ -413,6 +414,12 @@ public class ReminderFragment extends Fragment implements ReminderAdapter.OnItem
                 }
             }
         }
+    }
+
+    private int generateUniqueId(String itemName) {
+        long timestamp = System.currentTimeMillis();
+        String uniqueString = itemName + timestamp;
+        return Math.abs(uniqueString.hashCode());
     }
 
 }
