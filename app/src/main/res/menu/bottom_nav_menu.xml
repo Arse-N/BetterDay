@@ -11,6 +11,7 @@
             android:title="@string/calendar"/>
 
     <item
+            android:id="@+id/nav_space"
             android:title=""/>
 
     <item

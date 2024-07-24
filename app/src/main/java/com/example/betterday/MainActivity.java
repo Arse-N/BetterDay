@@ -13,26 +13,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import com.example.betterday.ui.block.BlockFragment;
-import com.example.betterday.ui.calendar.CalendarFragment;
-import com.example.betterday.ui.reminder.ReminderFragment;
-import com.example.betterday.ui.statistics.StatisticsFragment;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.appcompat.app.AppCompatActivity;
 import com.example.betterday.databinding.ActivityMainBinding;
+import com.example.betterday.ui.reminder.ReminderFragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.Calendar;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
@@ -100,6 +93,14 @@ public class MainActivity extends AppCompatActivity {
                 fab.setVisibility(View.GONE);
             }
         });
+
+        Menu menu = navView.getMenu();
+
+// Assuming you have item IDs like nav_home, nav_dashboard, nav_notifications, etc.
+        MenuItem spaceFragmentItem = menu.findItem(R.id.nav_space);
+        if (spaceFragmentItem != null) {
+            spaceFragmentItem.setEnabled(false);
+        }
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
